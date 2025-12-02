@@ -11,8 +11,8 @@ public class LanguageCHS
 
 public class PluginLanguage
 {
-    public string LoadedDHConsoleCommands => "已加载角色构建器插件！";
-    public string UnloadedDHConsoleCommands => "角色构建器插件已卸载！";
+    public string LoadedDHConsoleCommands => "已加载DHConsoleCommands插件！";
+    public string UnloadedDHConsoleCommands => "DHConsoleCommands插件已卸载！";
     public string NoRecommend => "Excel中不存在推荐遗器";
     public string AffixError => "词条加载错误";
     public string AffixCountError => "词条数量错误";

@@ -9,19 +9,20 @@ using EggLink.DanhengServer.Util;
 
 namespace DanhengPlugin.DHConsoleCommands;
 
-[PluginInfo("DHConsoleCommands", "DHConsole is ready to use commands", "1.1.0")]
+[PluginInfo("DHConsoleCommands", "DHConsole is ready to use commands", "1.2.0")]
 public class DHConsoleCommands : IPlugin
 {
     private readonly Logger _logger = new("DHConsoleCommands");
 
     public void OnLoad()
     {
-        CommandManager.Instance?.RegisterCommand(typeof(CommandBuild));
+        CommandManager.Instance?.RegisterCommand(typeof(CommandBuildChar));
         CommandManager.Instance?.RegisterCommand(typeof(CommandRemove));
         CommandManager.Instance?.RegisterCommand(typeof(CommandGameText));
         CommandManager.Instance?.RegisterCommand(typeof(CommandFetch));
         CommandManager.Instance?.RegisterCommand(typeof(CommandEquip));
-        CommandManager.Instance?.RegisterCommand(typeof(CommandDebug));
+        CommandManager.Instance?.RegisterCommand(typeof(CommandDebugLink));
+        CommandManager.Instance?.RegisterCommand(typeof(CommandClaim));
         _logger.Info(I18NManager.Translate("DHConsoleCommands.LoadedDHConsoleCommands"));
         // load data
         ResourceManager.LoadSingleExcel<AvatarRelicRecommendExcel>(typeof(AvatarRelicRecommendExcel));
@@ -83,6 +84,35 @@ public class DHConsoleCommands : IPlugin
 
     public void OnUnload()
     {
+        RemoveCommand("buildchar");
+        RemoveCommand("remove");
+        RemoveCommand("gametext");
+        RemoveCommand("fetch");
+        RemoveCommand("equip");
+        RemoveCommand("debuglink");
+        RemoveCommand("claim");
+
+        PluginConstants.RelicMainAffix.Clear();
+        PluginConstants.RelicSubAffix.Clear();
+
         _logger.Info(I18NManager.Translate("DHConsoleCommands.UnloadedDHConsoleCommands"));
+    }
+
+    private void RemoveCommand(string name)
+    {
+        if (CommandManager.Instance == null) return;
+
+        if (CommandManager.Instance.CommandAlias.TryGetValue(name, out var realName)) name = realName;
+        
+        if (CommandManager.Instance.Commands.ContainsKey(name))
+        {
+            CommandManager.Instance.Commands.Remove(name);
+            CommandManager.Instance.CommandInfo.Remove(name);
+            
+            // remove alias
+            var aliases = CommandManager.Instance.CommandAlias.Where(x => x.Value == name).Select(x => x.Key).ToList();
+            foreach (var alias in aliases)
+                CommandManager.Instance.CommandAlias.Remove(alias);
+        }
     }
 }

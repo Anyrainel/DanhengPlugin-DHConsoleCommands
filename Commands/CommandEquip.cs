@@ -29,7 +29,7 @@ public class CommandEquip : ICommand
         int avatarId = arg.GetInt(0);
         int itemId = arg.GetInt(1);
 
-        var avatar = player.AvatarManager!.GetAvatar(avatarId);
+        var avatar = player.AvatarManager!.GetFormalAvatar(avatarId);
         if (avatar == null)
         {
             await arg.SendMsg(I18NManager.Translate("Game.Command.Avatar.AvatarNotFound"));
@@ -92,7 +92,7 @@ public class CommandEquip : ICommand
 
         int avatarId = arg.GetInt(0);
         int relicId = arg.GetInt(1);
-        var avatar = player.AvatarManager!.GetAvatar(avatarId);
+        var avatar = player.AvatarManager!.GetFormalAvatar(avatarId);
         if (avatar == null)
         {
             await arg.SendMsg(I18NManager.Translate("Game.Command.Avatar.AvatarNotFound"));

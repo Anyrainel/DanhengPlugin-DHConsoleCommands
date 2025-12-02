@@ -26,7 +26,7 @@ public class CommandFetch : ICommand
         }
 
         List<int> avatarIds = [];
-        foreach (var avatar in player.AvatarManager!.AvatarData.Avatars)
+        foreach (var avatar in player.AvatarManager!.AvatarData.FormalAvatars)
         {
             avatarIds.Add(avatar.AvatarId);
         }
@@ -44,7 +44,16 @@ public class CommandFetch : ICommand
             return;
         }
 
-        await arg.SendMsg($@"level: {player.Data.Level}, gender: {(player.Data.CurrentGender == Gender.Man ? 1 : 2)}");
+        var pathId = 0;
+        // Find the main character (Traveller)
+        var mainCharacter = player.AvatarManager!.AvatarData.FormalAvatars.FirstOrDefault(a => a.BaseAvatarId >= 8001 && a.BaseAvatarId <= 8008);
+        
+        if (mainCharacter != null)
+        {
+            pathId = mainCharacter.GetCurPathInfo().PathId;
+        }
+
+        await arg.SendMsg($@"level: {player.Data.Level}, gender: {(player.Data.CurrentGender == Gender.Man ? 1 : 2)}, path: {pathId}");
     }
 
     [CommandMethod("avatar")]
@@ -67,7 +76,7 @@ public class CommandFetch : ICommand
             await arg.SendMsg(I18NManager.Translate("Game.Command.Avatar.AvatarNotFound"));
             return;
         }
-        var avatar = player.AvatarManager!.GetAvatar(avatarId);
+        var avatar = player.AvatarManager!.GetFormalAvatar(avatarId);
         if (avatar == null)
         {
             await arg.SendMsg(I18NManager.Translate("Game.Command.Avatar.AvatarNotFound"));
@@ -76,7 +85,7 @@ public class CommandFetch : ICommand
         var path = avatar.GetCurPathInfo();
         StringBuilder output = new StringBuilder();
         output.AppendLine($@"[Character] path: {path.PathId}, level: {avatar.Level}, rank: {path.Rank}");
-        output.AppendLine($@"[Talent] {string.Join("|", [.. avatar.SkillTree.Select(x => $"{x.Key}: {x.Value}")])}");
+        output.AppendLine($@"[Talent] {string.Join("|", [.. path.GetSkillTree().Select(x => $"{x.Key}: {x.Value}")])}");
         if (path.EquipId != 0)
         {
             var item = player.InventoryManager!.Data.EquipmentItems.Find(x => x.UniqueId == path.EquipId);
@@ -146,18 +155,60 @@ public class CommandFetch : ICommand
             {
                 try
                 {
-                    if (prop.Excel.IsHpRecover || prop.Excel.IsMpRecover || prop.PropInfo.AnchorID > 0 || prop.PropInfo.EventID > 0)
+                    if (prop.Excel.IsHpRecover || prop.Excel.IsMpRecover || prop.PropInfo.AnchorID > 0)
                     {
                         continue;
                     }
                     long distance = GetDistance(playerPos, prop.Position);
                     string type = prop.Excel.IsDoor ? "door" : prop.Excel.PropType.ToString().Replace("PROP_", "").ToLower();
-                    string states = string.Join(",", prop.Excel.PropStateList.Select(x => $"{x}:{(int)x}"));
-                    output.Add($"{entity.GroupID}-{prop.PropInfo.ID}[{distance}]: {type} {prop.Excel.ID} {prop.State}:{(int)prop.State} ({states})", distance);
+                    string states = string.Join(",", prop.Excel.PropStateList.Select(x => "{x}:{(int)x}"));
+                    output.Add($"{entity.GroupId}-{prop.PropInfo.ID}[{distance}]: {type} {prop.Excel.ID} {prop.State}:{(int)prop.State} ({states})", distance);
                 }
                 catch (Exception ex)
                 {
-                    output.Add($"Error processing entity {entity.GroupID}-{prop.PropInfo.ID}: {ex.Message}", long.MinValue);
+                    output.Add($"Error processing entity {entity.GroupId}-{prop.PropInfo.ID}: {ex.Message}", long.MinValue);
+                }
+            }
+        }
+        string sortedOutput = string.Join("\n", output.OrderBy(x => x.Value).Select(x => x.Key));
+        await arg.SendMsg($@"{sortedOutput}");
+    }
+
+    [CommandMethod("0 npc")]
+    public async ValueTask FetchNpc(CommandArg arg)
+    {
+        var player = arg.Target?.Player;
+        if (player == null)
+        {
+            await arg.SendMsg(I18NManager.Translate("Game.Command.Notice.PlayerNotFound"));
+            return;
+        }
+        var scene = player.SceneInstance;
+        if (scene == null)
+        {
+            await arg.SendMsg(I18NManager.Translate("Game.Command.Notice.SceneNotFound"));
+            return;
+        }
+        var playerPos = player.Data.Pos;
+        if (playerPos == null)
+        {
+            await arg.SendMsg("Player position not found");
+            return;
+        }
+        Dictionary<string, long> output = new Dictionary<string, long>();
+
+        foreach (var entity in scene.Entities.Values)
+        {
+            if (entity is EntityNpc npc)
+            {
+                try
+                {
+                    long distance = GetDistance(playerPos, npc.Position);
+                    output.Add($"{entity.GroupId}-{npc.InstId}[{distance}]: NpcId={npc.NpcId}", distance);
+                }
+                catch (Exception ex)
+                {
+                    output.Add($"Error processing entity {entity.GroupId}-{npc.InstId}: {ex.Message}", long.MinValue);
                 }
             }
         }

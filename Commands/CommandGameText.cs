@@ -1,4 +1,5 @@
 using System.Text;
+using System.Numerics;
 using EggLink.DanhengServer.Command;
 using EggLink.DanhengServer.Command.Command;
 using EggLink.DanhengServer.Data;
@@ -11,8 +12,8 @@ namespace DanhengPlugin.DHConsoleCommands.Commands;
 public class CommandGameText : ICommand
 {
 
-    static string currentLanguage = "None";
-    static Dictionary<long, string> textMap = new();
+    internal static string currentLanguage = "None";
+    internal static Dictionary<BigInteger, string> textMap = new();
 
     [CommandMethod("0 avatar")]
     public async ValueTask GetAvatarText(CommandArg arg)
@@ -116,7 +117,7 @@ public class CommandGameText : ICommand
         await arg.SendMsg("Usage: /gametext <avatar/item/mainmission/submission> #<language>");
     }
 
-    private static void LoadTextMap(string lang)
+    internal static void LoadTextMap(string lang)
     {
         if (lang == currentLanguage) return;
         var textMapPath = ConfigManager.Config.Path.ResourcePath + "/TextMap/TextMap" + lang + ".json";
@@ -125,7 +126,7 @@ public class CommandGameText : ICommand
             // TODO: add error handling
             return;
         }
-        var textMapData = JsonConvert.DeserializeObject<Dictionary<long, string>>(File.ReadAllText(textMapPath));
+        var textMapData = JsonConvert.DeserializeObject<Dictionary<BigInteger, string>>(File.ReadAllText(textMapPath));
         if (textMapData == null)
         {
             // TODO: add error handling
@@ -133,6 +134,16 @@ public class CommandGameText : ICommand
         }
         textMap = textMapData;
         currentLanguage = lang;
+    }
+
+    public static string GetTranslatedText(BigInteger hash, string lang)
+    {
+        LoadTextMap(lang); // Ensure the map is loaded for the requested language
+        if (textMap.TryGetValue(hash, out var value))
+        {
+            return value;
+        }
+        return $"[{hash}]"; // Fallback to ID if not found
     }
 
 }

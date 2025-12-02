@@ -71,7 +71,7 @@ public class CommandRemove : ICommand
             return;
         }
         // get avatar data
-        var avatar = player.AvatarManager!.GetAvatar(avatarId);
+        var avatar = player.AvatarManager!.GetFormalAvatar(avatarId);
         if (avatar == null)
         {
             await arg.SendMsg(I18NManager.Translate("Game.Command.Avatar.AvatarNotFound"));
@@ -79,7 +79,7 @@ public class CommandRemove : ICommand
         }
 
         List<ItemData> itemsToUnequip = [];
-        foreach (var pathInfo in avatar.PathInfoes.Values)
+        foreach (var pathInfo in avatar.PathInfos.Values)
         {
             foreach (var relic in pathInfo.Relic)
             {
@@ -102,7 +102,7 @@ public class CommandRemove : ICommand
             }
         }
         await player.SendPacket(new PacketPlayerSyncScNotify(itemsToUnequip));
-        player.AvatarManager!.AvatarData.Avatars.Remove(avatar);
+        player.AvatarManager!.AvatarData.FormalAvatars.Remove(avatar);
         DatabaseHelper.SaveInstance(player.AvatarManager!.AvatarData);
         await player.SendPacket(new PacketPlayerSyncScNotify(avatar));
 
