@@ -18,7 +18,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '9.0.x'
 
       - name: Build project
         run: dotnet build --configuration Debug
@@ -29,6 +29,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./bin/Debug/net8.0/DanhengPlugin-DHConsoleCommands.dll
+          asset_path: ./bin/Debug/net9.0/DanhengPlugin-DHConsoleCommands.dll
           asset_name: DanhengPlugin-DHConsoleCommands.dll
           asset_content_type: application/octet-stream
